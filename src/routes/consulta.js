@@ -15,7 +15,7 @@ const cheerio = require('cheerio');
 //require('geckodriver');
 
 const {Builder, By, Key, until} = require('selenium-webdriver');
-
+/*
 async function example(CEDULA) {
     let driver = await new Builder().forBrowser('firefox').build();
     try {
@@ -143,7 +143,7 @@ async function example(CEDULA) {
       await driver.quit();
      // await driver.quit();
     }
-  };
+  };*/
 //https://www.procuraduria.gov.co/CertWEB/Certificado.aspx?tpo=1
 //https://www.sisben.gov.co/atencion-al-ciudadano/Paginas/consulta-del-puntaje.aspx
 
@@ -230,6 +230,7 @@ router.post('/edictar/:cedula',logeosuper,async(req, res)=>{
       if(cc_lider_funcionario==''){cc_lider_funcionario=null;};
       if(comuna==''){comuna=null;};
       if(direccion==''){direccion=null;};
+      if(nombre_del_puesto==''){nombre_del_puesto=null;};
     CEDULA=cedula;
     //example(CEDULA);
    
@@ -239,10 +240,11 @@ router.post('/edictar/:cedula',logeosuper,async(req, res)=>{
      
       nombre_completo=nombre_completo.toUpperCase();
     }
-    if(nombre_del_puesto!=''){
+    if(nombre_del_puesto!=null){
      
          nombre_del_puesto=nombre_del_puesto.toUpperCase();
     }
+    /*
     request.post('https://wsp.registraduria.gov.co/censo/consultar/', { 
       // 1107071154    66946183
        form: { nuip: CEDULA }},async (err, ress,body) => {
@@ -276,7 +278,7 @@ router.post('/edictar/:cedula',logeosuper,async(req, res)=>{
               correo,
               comuna:divipol[i].comuna,
               zona:divipol[i].zona,
-              nombre_del_puesto:regis_lugar,
+              nombre_del_puesto,
               puesto:divipol[i].puesto,
               mesa:regis_mesa,
               cc_lider_funcionario
@@ -322,7 +324,7 @@ router.post('/edictar/:cedula',logeosuper,async(req, res)=>{
       correo:0,
       comuna:0,
       zona:0,
-      nombre_del_puesto:0,
+      nombre_del_puesto,
       puesto:0,
       mesa:0,
       cc_lider_funcionario
@@ -352,7 +354,7 @@ router.post('/edictar/:cedula',logeosuper,async(req, res)=>{
     }
     
   if(regis_lugarbool==false){
-  
+  */
     const nuevousuario={
       cedula,
       nombre_completo ,
@@ -361,9 +363,9 @@ router.post('/edictar/:cedula',logeosuper,async(req, res)=>{
       correo,
       comuna,
       zona,
-      nombre_del_puesto:regis_lugar,
+      nombre_del_puesto:nombre_del_puesto,
       puesto,
-      mesa:regis_mesa,
+      mesa:mesa,
       cc_lider_funcionario
      }
     
@@ -389,9 +391,10 @@ router.post('/edictar/:cedula',logeosuper,async(req, res)=>{
             }
       }
     }
-  }
+  /*}
   
-  }); 
+  
+  }); */
      
   });
 
@@ -490,10 +493,10 @@ router.post('/crear',logeosuper,async(req, res)=>{
     direccion,   
     telefono,
     correo,
-    comuna:0,
-    zona:0,
+    comuna:comuna,
+    zona:zona,
     nombre_del_puesto,
-    puesto:0,
+    puesto:puesto,
     mesa,
     cc_lider_funcionario
     }
@@ -555,6 +558,145 @@ if(regis_lugarbool==false){
   
     
 });
+router.get('/actualizar',logeosuper,async(req, res)=>{ 
+  //res.render('consulta/consulta');
+  reqq =req;
+  ress=res;
+  const actualizar = await pool.query('SELECT * FROM persona');
+  conteo_atualizacion=0;
+        const contarusuario = await pool.query('SELECT * FROM persona')
+        conteo_atualizacion=contarusuario.length;
+        
+  for(var i=0 ; i<actualizar.length;i++){
+    
+    CEDULA=actualizar[i];
+    actualizarBD(CEDULA, reqq , ress);
+   
+  }
+  
+ // res.redirect('/consulta/');
+ console.log("final");
+ console.log(conteo_atualizacion);
+ 
+  
+}); 
+async function actualizarBD(CEDULA, req, res){
+  
+  request.post('https://wsp.registraduria.gov.co/censo/consultar/', { 
+    // 1107071154    66946183
+     form: { nuip: CEDULA.cedula }},async (err, ress,body) => {
+      if(err) {
+        assert.isNotOk(error,'Promise error');
+        done();
+
+      }else{
+        console.log(conteo_atualizacion)
+       var $ = cheerio.load(body);
+
+       var workbook = XLSX.readFile(path.join(process.cwd())+'/src/assets/DIVIPOL_DEFINITIVA.xlsx', {sheetStubs: true}); 
+ 
+       var sheet_name_list = workbook.SheetNames;
+      
+       var regis_direccion=$('.table').find("td:nth-child(5)").text().slice(0, -28).replace(/u00d1/, "Ñ");
+       var regis_mesa=$('.table').find("td:nth-child(6)").text().slice(0, -33);
+       var regis_lugar=$('.table').find("td:nth-child(4)").text().slice(0, -28).replace(/u00d1/, "Ñ");
+    
+       
+    //  console.log(actualizar[i].cedula)
+      
+       
+      
+       
+
+        const actualizarusuario = await pool.query('SELECT * FROM persona WHERE cedula='+CEDULA.cedula);
+        
+        
+        
+     
+        
+        if(regis_mesa != actualizarusuario[0].mesa || regis_lugar != actualizarusuario[0].nombre_del_puesto){
+         console.log("es diferente cambiar")
+         divipol=(XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]));
+
+         for(var t=0;t<divipol.length;t++){
+           //console.log("revise")
+            if(regis_lugar == divipol[t].nombre_del_puesto){
+              
+              const nuevousuario={
+                cedula:CEDULA.cedula,
+                nombre_completo:CEDULA.nombre_completo ,
+                direccion:CEDULA.direccion,  
+                telefono:CEDULA.telefono,
+                correo:CEDULA.telefono,
+                comuna:divipol[t].comuna,
+                zona:divipol[t].zona,
+                nombre_del_puesto:regis_lugar,
+                puesto:divipol[t].puesto,
+                mesa:regis_mesa,
+                cc_lider_funcionario:CEDULA.cc_lider_funcionario
+               }
+                 await pool.query('UPDATE persona SET ? WHERE cedula=?',[nuevousuario,CEDULA.cedula]);
+                  
+                
+                 conteo_atualizacion=conteo_atualizacion-1;
+               //  console.log(conteo_atualizacion);
+                 
+                 console.log("existe...................");
+            }
+
+         }
+        
+         console.log(CEDULA.nombre_completo + " " +CEDULA.cedula);
+       }else{
+        console.log("es igual no hacer nada")
+        conteo_atualizacion=conteo_atualizacion-1;
+       // console.log(conteo_atualizacion);
+        console.log(CEDULA.nombre_completo + " " +CEDULA.cedula);
+       }
+
+       
+       if(conteo_atualizacion==0){
+      //  request.redirect('/consulta')
+         req.flash('success','actualizacion completa');
+        res.redirect('/consulta')
+         console.log("Terminado..........................")
+       }
+      /*
+    
+        for(var i=0;i<divipol.length;i++){
+       
+          if(regis_lugar==divipol[i].nombre_del_puesto){
+          
+            
+             const nuevousuario={
+             cedula,
+             nombre_completo ,
+             direccion,  
+             telefono,
+             correo,
+             comuna:divipol[i].comuna,
+             zona:divipol[i].zona,
+             nombre_del_puesto:regis_lugar,
+             puesto:divipol[i].puesto,
+             mesa:regis_mesa,
+             cc_lider_funcionario
+            }
+           }
+         }
+      
+*/
+//req.flash('success','actualizacion completa');
+//ress.redirect('/consulta');  
+}; 
+  });
+ 
+   
+  //req.flash('success','actualizacion completa');
+ // res.redirect('/consulta');          
+} 
+router.post('/actualizar',logeosuper,async(req, res)=>{ 
+  res.render('consulta/consulta'); 
+});  
 router.get('/crear',logeosuper,async(req, res)=>{ 
    res.render('consulta/crear.hbs'); 
 });
@@ -665,6 +807,7 @@ async function conte(tamaño){
 
 async function formulario(i,users,req,res,celda,tamaño,con){
   t=0;
+/*  
 request.post('https://wsp.registraduria.gov.co/censo/consultar/', { 
     // 1107071154    66946183
     
@@ -678,12 +821,12 @@ request.post('https://wsp.registraduria.gov.co/censo/consultar/', {
     var regis_direccion=$('.table').find("td:nth-child(5)").text().slice(0, -28).replace(/u00d1/, "ñ");
     var regis_mesa=$('.table').find("td:nth-child(6)").text().slice(0, -33);
     var regis_lugar=$('.table').find("td:nth-child(4)").text().slice(0, -28).replace(/u00d1/, "Ñ");
-   
+   */
     
     var workbookk = XLSX.readFile(path.join(process.cwd())+'/src/assets/DIVIPOL_DEFINITIVA.xlsx', {sheetStubs: true}); 
     var sheet_name_listt = workbookk.SheetNames;
     divipol=(XLSX.utils.sheet_to_json(workbookk.Sheets[sheet_name_listt[0]]));
-    
+    /*
     for(var t=0;t<divipol.length;t++){
  
      if(regis_lugar!=''){
@@ -704,7 +847,7 @@ request.post('https://wsp.registraduria.gov.co/censo/consultar/', {
         }
       }
     
-    }
+    }*/
     
    
      if(users.cedula==null){ 
@@ -718,7 +861,7 @@ request.post('https://wsp.registraduria.gov.co/censo/consultar/', {
 
         if(users.nombre_del_puesto==null){
          
-         users.nombre_del_puesto=regis_lugar;
+         users.nombre_del_puesto=users.nombre_del_puesto;
          
         }
         if(users.comuna==null){users.comuna=0;};
@@ -726,14 +869,14 @@ request.post('https://wsp.registraduria.gov.co/censo/consultar/', {
         if(users.puesto==null){users.puesto=0;};
         if(users.mesa==null){users.mesa=null;};
         if(users.cc_lider_funcionario==''){users.cc_lider_funcionario=null;};
-        if(regis_mesa!=''){
+       /* if(regis_mesa!=''){*/
         if(users.mesa==null){
          
-          users.mesa=regis_mesa;
+          users.mesa=users.mesa;
           
          }
-        }
-        /*
+       /* }
+        
          if(users.direccion==null){
          
           users.direccion=regis_direccion;
@@ -784,7 +927,7 @@ request.post('https://wsp.registraduria.gov.co/censo/consultar/', {
      
    
     
-    });
+    /*});*/
  
 
 }

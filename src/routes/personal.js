@@ -476,6 +476,7 @@ router.get('/edictar/:cedula',logeosuper,async(req, res)=>{
          
              nombre_del_puesto=nombre_del_puesto.toUpperCase();
         }
+        /*
         request.post('https://wsp.registraduria.gov.co/censo/consultar/', { 
           // 1107071154    66946183
            form: { nuip: CEDULA }},async (err, ress,body) => {
@@ -596,7 +597,7 @@ router.get('/edictar/:cedula',logeosuper,async(req, res)=>{
         
         }
         
-      if(regis_lugarbool==false){
+      if(regis_lugarbool==false){*/
       
         const nuevousuario={
           cedula,
@@ -606,9 +607,9 @@ router.get('/edictar/:cedula',logeosuper,async(req, res)=>{
           correo,
           comuna,
           zona,
-          nombre_del_puesto:regis_lugar,
+          nombre_del_puesto:nombre_del_puesto,
           puesto,
-          mesa:regis_mesa,
+          mesa:mesa,
           cc_lider_funcionario
          }
         
@@ -640,10 +641,10 @@ router.get('/edictar/:cedula',logeosuper,async(req, res)=>{
         
         }
       
-      }
+      /*}
       
       
-      }); 
+      }); */
             
       
       
